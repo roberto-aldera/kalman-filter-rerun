@@ -47,8 +47,14 @@ def main():
         "2018-06-21-16-24-39-long-hanborough-to-ori-V4-radar-leopon-trial-sunny-long-range/" \
         "motion_estimation/ground-truth/flattened_novatel_generated_poses.monolithic"
 
+    original_kalman_filter_relative_poses_path = "/Users/roberto/data/odometry-comparisons/rugged_ro/" \
+        "2018-06-21-16-24-39-long-hanborough-to-ori-V4-radar-leopon-trial-sunny-long-range/" \
+        "motion_estimation/kfc-live-svm-thresh-0.2-N7/radar_motion_estimation.monolithic"
+
     process_poses(ro_relative_poses_path, "ro_poses")
     process_poses(ins_relative_poses_path, "ins_poses")
+    process_poses(original_kalman_filter_relative_poses_path,
+                  "original_ero_poses")
 
 
 if __name__ == "__main__":

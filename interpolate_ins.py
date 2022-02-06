@@ -147,8 +147,8 @@ def main():
     df_ro = pd.read_csv(ro_csv)
     df_ins = pd.read_csv(ins_csv)
 
-    df_ro = df_ro[:3000]
-    df_ins = df_ins[:40000]
+    # df_ro = df_ro[:3000]
+    # df_ins = df_ins[:40000]
 
     df_interpolated_ins = get_interpolated_ins(df_ins, df_ro)
 
