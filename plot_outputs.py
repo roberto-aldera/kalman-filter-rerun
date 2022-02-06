@@ -61,6 +61,40 @@ def plot_x_y_yaw(output_file, df_ro, df_ins):
     print("Plots generated and written to:", output_file)
 
 
+def plot_labels(df_labels, output_file):
+    _, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 10))
+
+    ax.plot(df_labels, '.-', color="tab:red", label="labels")
+    ax.set_xlabel("xtitle")
+    ax.set_ylabel("ytitle")
+    ax.legend()
+    ax.grid()
+
+    plt.savefig(output_file)
+    plt.close()
+
+    print("Plots generated and written to:", output_file)
+
+
+def plot_ro_with_labels(df_ro, df_labels, output_file):
+    _, ax = plt.subplots(nrows=1, ncols=1, figsize=(20, 10))
+
+    for i in range(len(df_labels)):
+        if df_labels.bad_ro_state.iloc[i] == 1.0:
+            ax.plot(i, df_ro.x.iloc[i], ',', color="tab:red")
+        else:
+            ax.plot(i, df_ro.x.iloc[i], ',', color="tab:green")
+    ax.set_xlabel("xtitle")
+    ax.set_ylabel("ytitle")
+    ax.legend()
+    ax.grid()
+
+    plt.savefig(output_file)
+    plt.close()
+
+    print("Plots generated and written to:", output_file)
+
+
 def main():
     print("Running script...")
     output_dir = Path("/Users/roberto/data/kalman-filter-rerun")
@@ -75,6 +109,10 @@ def main():
 
     plot_single_parameter(f"{output_dir}/single_parameter.pdf", df_ro, df_ins)
     plot_x_y_yaw(f"{output_dir}/fig.pdf", df_ro, df_ins)
+
+    df_labels = pd.read_csv(f"{output_dir}/svm-labels.csv")
+    plot_labels(df_labels, f"{output_dir}/labels.pdf")
+    plot_ro_with_labels(df_ro, df_labels, f"{output_dir}/ro-with-labels.pdf")
 
 
 if __name__ == "__main__":
