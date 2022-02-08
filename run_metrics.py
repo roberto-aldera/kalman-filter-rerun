@@ -10,9 +10,10 @@ import settings
 import matplotlib.pyplot as plt
 
 
-def get_metrics(ro_df, ins_df, output_path):
+def get_metrics(ins_df, ro_df, kf_df,  output_path):
     gt_se3s, _ = get_poses_and_timestamps_from_df(ins_df)
     aux0_se3s, _ = get_poses_and_timestamps_from_df(ro_df)
+    aux1_se3s, _ = get_poses_and_timestamps_from_df(kf_df)
 
     # making global poses from the relative poses
     gt_global_se3s = [np.identity(4)]
@@ -25,9 +26,15 @@ def get_metrics(ro_df, ins_df, output_path):
         aux0_global_se3s.append(aux0_global_se3s[i - 1] @ aux0_se3s[i])
     aux0_global_SE3s = get_se3s_from_raw_se3s(aux0_global_se3s)
 
+    aux1_global_se3s = [np.identity(4)]
+    for i in range(1, len(aux1_se3s)):
+        aux1_global_se3s.append(aux1_global_se3s[i - 1] @ aux1_se3s[i])
+    aux1_global_SE3s = get_se3s_from_raw_se3s(aux1_global_se3s)
+
     segment_lengths = [100, 200, 300, 400, 500, 600, 700, 800]
 
     tm_gt_aux0 = TrajectoryMetrics(gt_global_SE3s, aux0_global_SE3s)
+    tm_gt_aux1 = TrajectoryMetrics(gt_global_SE3s, aux1_global_SE3s)
     # print_trajectory_metrics(tm_gt_aux0, segment_lengths, data_name="RO")
 
     # Save metrics to text file and make plots
@@ -37,10 +44,10 @@ def get_metrics(ro_df, ins_df, output_path):
     output_path_for_metrics.mkdir(parents=True)
 
     save_trajectory_metrics_to_file(
-        output_path_for_metrics, {"RO": tm_gt_aux0}, segment_lengths)
+        output_path_for_metrics, {"RO": tm_gt_aux0, "KF": tm_gt_aux1}, segment_lengths)
 
     visualiser = TrajectoryVisualizer(
-        {"RO": tm_gt_aux0})
+        {"RO": tm_gt_aux0, "KF": tm_gt_aux1})
     visualiser.plot_segment_errors(figsize=(10, 4), segs=segment_lengths, legend_fontsize=8,
                                    outfile="%s%s" % (output_path_for_metrics, "/segment_errors.pdf"))
     visualiser.plot_topdown(which_plane='yx',  # this was yx, a custom flip to conform to MRG convention, instead of xy
@@ -99,14 +106,16 @@ def get_se3s_from_raw_se3s(raw_se3s):
     return se3s
 
 
-def plot_x_y_yaw(output_file, ro_df, ins_df):
+def plot_x_y_yaw(output_file, ins_df, ro_df, kf_df):
     _, axes = plt.subplots(nrows=3, ncols=1, figsize=(20, 10))
 
     ax = axes[0]
-    ax.plot(ro_df.x, ',',
-            color=settings.colours.ro, label="RO")
     ax.plot(ins_df.x, ',',
             color=settings.colours.ins, label="INS")
+    ax.plot(ro_df.x, ',',
+            color=settings.colours.ro, label="RO")
+    ax.plot(kf_df.x, ',',
+            color=settings.colours.kf, label="KF")
     ax.set_title("Title")
     ax.set_xlabel("x label")
     ax.set_ylabel("y label")
@@ -114,20 +123,24 @@ def plot_x_y_yaw(output_file, ro_df, ins_df):
     ax.grid()
 
     ax = axes[1]
-    ax.plot(ro_df.y, ',',
-            color=settings.colours.ro, label="RO")
     ax.plot(ins_df.y, ',',
             color=settings.colours.ins, label="INS")
+    ax.plot(ro_df.y, ',',
+            color=settings.colours.ro, label="RO")
+    ax.plot(kf_df.y, ',',
+            color=settings.colours.kf, label="KF")
     ax.set_xlabel("x label")
     ax.set_ylabel("y label")
     ax.legend()
     ax.grid()
 
     ax = axes[2]
-    ax.plot(ro_df.yaw, ',',
-            color=settings.colours.ro, label="RO")
     ax.plot(ins_df.yaw, ',',
             color=settings.colours.ins, label="INS")
+    ax.plot(ro_df.yaw, ',',
+            color=settings.colours.ro, label="RO")
+    ax.plot(kf_df.yaw, ',',
+            color=settings.colours.kf, label="KF")
     ax.set_xlabel("x label")
     ax.set_ylabel("y label")
     ax.legend()
@@ -141,10 +154,12 @@ def plot_x_y_yaw(output_file, ro_df, ins_df):
 
 def parse_arguments(args):
     parser = ArgumentParser(description="Plot INS vs RO outputs.")
-    parser.add_argument('--ro_csv', default="", type=Path,
-                        help="RO relative pose CSV")
-    parser.add_argument('--ins_csv', default="", type=Path,
+    parser.add_argument('--ins_csv', default=settings.INS_CSV, type=Path,
                         help="INS relative pose CSV")
+    parser.add_argument('--ro_csv', default=settings.RO_CSV, type=Path,
+                        help="RO relative pose CSV")
+    parser.add_argument('--kf_csv', default=settings.KF_CSV, type=Path,
+                        help="Kalman filter relative pose CSV")
     parser.add_argument('--output_dir', default="", type=Path,
                         help="Output directory to store figures")
     parser.add_argument('--overwrite', default=False, action="store_true",
@@ -159,11 +174,12 @@ def main(arg_list=None):
     output_path = args.output_dir / "tmp-plots"
     output_path.mkdir(parents=True, exist_ok=args.overwrite)
 
-    ro_df = pd.read_csv(args.ro_csv)
     ins_df = pd.read_csv(args.ins_csv)
+    ro_df = pd.read_csv(args.ro_csv)
+    kf_df = pd.read_csv(args.kf_csv)
 
-    plot_x_y_yaw(f"{output_path}/x_y_yaw.pdf", ro_df, ins_df)
-    get_metrics(ro_df, ins_df, output_path)
+    plot_x_y_yaw(f"{output_path}/x_y_yaw.pdf", ins_df, ro_df, kf_df)
+    get_metrics(ins_df, ro_df, kf_df, output_path)
 
 
 if __name__ == '__main__':
