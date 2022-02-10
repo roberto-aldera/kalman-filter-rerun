@@ -21,7 +21,7 @@ def get_kalman_filter_output(df_ro, df_labels):
                                [0, 0, 1, 0, 0, 0]])
 
     R = np.eye(6, 6) * 1  # motion model uncertainty
-    Q = np.eye(3, 3) * 3  # sensor (RO) uncertainty
+    Q = np.eye(3, 3) * 1  # sensor (RO) uncertainty
     E = np.zeros([6, 6])
 
     def Y(i): return np.array(
@@ -47,7 +47,7 @@ def get_kalman_filter_output(df_ro, df_labels):
 
             m = X - X2
             v = np.matmul(m.T, np.matmul(np.linalg.pinv(E2 - E), m))
-            if(abs(v) < 1.5):  # chi-squared check - perform update if this passes
+            if(abs(v) < 3.8):  # chi-squared check - perform update if this passes
                 X = X2
                 E = E2
         X_outputs.append(X)

@@ -8,12 +8,21 @@ import pandas as pd
 from liegroups import SE3
 import settings
 import matplotlib.pyplot as plt
+import pdb
 
 
 def get_metrics(ins_df, ro_df, kf_df,  output_path):
-    gt_se3s, _ = get_poses_and_timestamps_from_df(ins_df)
-    aux0_se3s, _ = get_poses_and_timestamps_from_df(ro_df)
-    aux1_se3s, _ = get_poses_and_timestamps_from_df(kf_df)
+    # Kalman filtered data only starts from second frame, so need to crop the others
+    ins_df = ins_df.iloc[1:].reset_index(drop=True)
+    ro_df = ro_df.iloc[1:].reset_index(drop=True)
+
+    gt_se3s, gt_timestamps = get_poses_and_timestamps_from_df(ins_df)
+    aux0_se3s, aux0_timestamps = get_poses_and_timestamps_from_df(ro_df)
+    aux1_se3s, aux1_timestamps = get_poses_and_timestamps_from_df(kf_df)
+
+    # check timestamps all line up before proceeding
+    assert(gt_timestamps.iloc[0] == aux0_timestamps.iloc[0])
+    assert(gt_timestamps.iloc[0] == aux1_timestamps.iloc[0])
 
     # making global poses from the relative poses
     gt_global_se3s = [np.identity(4)]
@@ -77,23 +86,18 @@ def print_trajectory_metrics(tm_gt_est, segment_lengths, data_name="this"):
 
 
 def get_poses_and_timestamps_from_df(df):
-    x_vals = df.x
-    y_vals = df.y
-    th_vals = df.yaw
-    timestamps = df.timestamp
-
     se3s = []
-    for i in range(len(df.index)):
-        th = th_vals[i]
+    for i in range(len(df.x)):
+        th = df.yaw.iloc[i]
         pose = np.identity(4)
         pose[0, 0] = np.cos(th)
         pose[0, 1] = -np.sin(th)
         pose[1, 0] = np.sin(th)
         pose[1, 1] = np.cos(th)
-        pose[0, 3] = x_vals[i]
-        pose[1, 3] = y_vals[i]
+        pose[0, 3] = df.x.iloc[i]
+        pose[1, 3] = df.y.iloc[i]
         se3s.append(pose)
-    return se3s, timestamps
+    return se3s, df.timestamp
 
 
 def get_se3s_from_raw_se3s(raw_se3s):
