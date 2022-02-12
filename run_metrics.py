@@ -69,10 +69,13 @@ def get_metrics(ins_df, ro_df, kf_aux1_df, kf_aux2_df, kf_aux3_df,  output_path)
     output_path_for_metrics.mkdir(parents=True)
 
     save_trajectory_metrics_to_file(
-        output_path_for_metrics, {"RO": tm_gt_aux0, "KF-1": tm_gt_aux1, "KF-2": tm_gt_aux2, "KF-3": tm_gt_aux3}, segment_lengths)
+        output_path_for_metrics, {"RO": tm_gt_aux0, settings.AUX1_NAME: tm_gt_aux1,
+                                  settings.AUX2_NAME: tm_gt_aux2, settings.AUX3_NAME: tm_gt_aux3},
+        segment_lengths)
 
     visualiser = TrajectoryVisualizer(
-        {"RO": tm_gt_aux0, "KF-1": tm_gt_aux1, "KF-2": tm_gt_aux2, "KF-3": tm_gt_aux3})
+        {"RO": tm_gt_aux0, settings.AUX1_NAME: tm_gt_aux1,
+         settings.AUX2_NAME: tm_gt_aux2, settings.AUX3_NAME: tm_gt_aux3})
     visualiser.plot_segment_errors(figsize=(10, 4), segs=segment_lengths, legend_fontsize=8,
                                    outfile="%s%s" % (output_path_for_metrics, "/segment_errors.pdf"))
     visualiser.plot_topdown(which_plane='yx',  # this was yx, a custom flip to conform to MRG convention, instead of xy

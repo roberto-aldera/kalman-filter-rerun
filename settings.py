@@ -12,3 +12,7 @@ RO_CSV = "/Users/roberto/data/kalman-filter-rerun/relative-poses/ro_poses.csv"
 AUX1_CSV = "/Users/roberto/data/kalman-filter-rerun/relative-poses/kf_R1_Q0p5_poses.csv"
 AUX2_CSV = "/Users/roberto/data/kalman-filter-rerun/relative-poses/kf_R1_Q0p3_poses.csv"
 AUX3_CSV = "/Users/roberto/data/kalman-filter-rerun/relative-poses/kf_R1_Q0p1_poses.csv"
+
+AUX1_NAME = "Configuration 3"
+AUX2_NAME = "Configuration 4"
+AUX3_NAME = "Configuration 5"
