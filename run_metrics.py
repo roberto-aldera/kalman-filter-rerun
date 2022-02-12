@@ -11,18 +11,22 @@ import matplotlib.pyplot as plt
 import pdb
 
 
-def get_metrics(ins_df, ro_df, kf_df,  output_path):
+def get_metrics(ins_df, ro_df, kf_aux1_df, kf_aux2_df, kf_aux3_df,  output_path):
     # Kalman filtered data only starts from second frame, so need to crop the others
     ins_df = ins_df.iloc[1:].reset_index(drop=True)
     ro_df = ro_df.iloc[1:].reset_index(drop=True)
 
     gt_se3s, gt_timestamps = get_poses_and_timestamps_from_df(ins_df)
     aux0_se3s, aux0_timestamps = get_poses_and_timestamps_from_df(ro_df)
-    aux1_se3s, aux1_timestamps = get_poses_and_timestamps_from_df(kf_df)
+    aux1_se3s, aux1_timestamps = get_poses_and_timestamps_from_df(kf_aux1_df)
+    aux2_se3s, aux2_timestamps = get_poses_and_timestamps_from_df(kf_aux2_df)
+    aux3_se3s, aux3_timestamps = get_poses_and_timestamps_from_df(kf_aux3_df)
 
     # check timestamps all line up before proceeding
     assert(gt_timestamps.iloc[0] == aux0_timestamps.iloc[0])
     assert(gt_timestamps.iloc[0] == aux1_timestamps.iloc[0])
+    assert(gt_timestamps.iloc[0] == aux2_timestamps.iloc[0])
+    assert(gt_timestamps.iloc[0] == aux3_timestamps.iloc[0])
 
     # making global poses from the relative poses
     gt_global_se3s = [np.identity(4)]
@@ -40,10 +44,22 @@ def get_metrics(ins_df, ro_df, kf_df,  output_path):
         aux1_global_se3s.append(aux1_global_se3s[i - 1] @ aux1_se3s[i])
     aux1_global_SE3s = get_se3s_from_raw_se3s(aux1_global_se3s)
 
+    aux2_global_se3s = [np.identity(4)]
+    for i in range(1, len(aux2_se3s)):
+        aux2_global_se3s.append(aux2_global_se3s[i - 1] @ aux2_se3s[i])
+    aux2_global_SE3s = get_se3s_from_raw_se3s(aux2_global_se3s)
+
+    aux3_global_se3s = [np.identity(4)]
+    for i in range(1, len(aux3_se3s)):
+        aux3_global_se3s.append(aux3_global_se3s[i - 1] @ aux3_se3s[i])
+    aux3_global_SE3s = get_se3s_from_raw_se3s(aux3_global_se3s)
+
     segment_lengths = [100, 200, 300, 400, 500, 600, 700, 800]
 
     tm_gt_aux0 = TrajectoryMetrics(gt_global_SE3s, aux0_global_SE3s)
     tm_gt_aux1 = TrajectoryMetrics(gt_global_SE3s, aux1_global_SE3s)
+    tm_gt_aux2 = TrajectoryMetrics(gt_global_SE3s, aux2_global_SE3s)
+    tm_gt_aux3 = TrajectoryMetrics(gt_global_SE3s, aux3_global_SE3s)
     # print_trajectory_metrics(tm_gt_aux0, segment_lengths, data_name="RO")
 
     # Save metrics to text file and make plots
@@ -53,10 +69,10 @@ def get_metrics(ins_df, ro_df, kf_df,  output_path):
     output_path_for_metrics.mkdir(parents=True)
 
     save_trajectory_metrics_to_file(
-        output_path_for_metrics, {"RO": tm_gt_aux0, "KF": tm_gt_aux1}, segment_lengths)
+        output_path_for_metrics, {"RO": tm_gt_aux0, "KF-1": tm_gt_aux1, "KF-2": tm_gt_aux2, "KF-3": tm_gt_aux3}, segment_lengths)
 
     visualiser = TrajectoryVisualizer(
-        {"RO": tm_gt_aux0, "KF": tm_gt_aux1})
+        {"RO": tm_gt_aux0, "KF-1": tm_gt_aux1, "KF-2": tm_gt_aux2, "KF-3": tm_gt_aux3})
     visualiser.plot_segment_errors(figsize=(10, 4), segs=segment_lengths, legend_fontsize=8,
                                    outfile="%s%s" % (output_path_for_metrics, "/segment_errors.pdf"))
     visualiser.plot_topdown(which_plane='yx',  # this was yx, a custom flip to conform to MRG convention, instead of xy
@@ -110,7 +126,7 @@ def get_se3s_from_raw_se3s(raw_se3s):
     return se3s
 
 
-def plot_x_y_yaw(output_file, ins_df, ro_df, kf_df):
+def plot_x_y_yaw(output_file, ins_df, ro_df, kf_aux1_df, kf_aux2_df, kf_aux3_df):
     _, axes = plt.subplots(nrows=3, ncols=1, figsize=(20, 10))
 
     ax = axes[0]
@@ -118,8 +134,12 @@ def plot_x_y_yaw(output_file, ins_df, ro_df, kf_df):
             color=settings.colours.ins, label="INS")
     ax.plot(ro_df.x, ',',
             color=settings.colours.ro, label="RO")
-    ax.plot(kf_df.x, ',',
-            color=settings.colours.kf, label="KF")
+    ax.plot(kf_aux1_df.x, ',',
+            color=settings.colours.kf_aux1, label="KF-aux1")
+    ax.plot(kf_aux2_df.x, ',',
+            color=settings.colours.kf_aux2, label="KF-aux2")
+    ax.plot(kf_aux3_df.x, ',',
+            color=settings.colours.kf_aux3, label="KF-aux3")
     ax.set_title("Title")
     ax.set_xlabel("x label")
     ax.set_ylabel("y label")
@@ -131,8 +151,12 @@ def plot_x_y_yaw(output_file, ins_df, ro_df, kf_df):
             color=settings.colours.ins, label="INS")
     ax.plot(ro_df.y, ',',
             color=settings.colours.ro, label="RO")
-    ax.plot(kf_df.y, ',',
-            color=settings.colours.kf, label="KF")
+    ax.plot(kf_aux1_df.y, ',',
+            color=settings.colours.kf_aux1, label="KF-aux1")
+    ax.plot(kf_aux2_df.y, ',',
+            color=settings.colours.kf_aux2, label="KF-aux2")
+    ax.plot(kf_aux3_df.y, ',',
+            color=settings.colours.kf_aux3, label="KF-aux3")
     ax.set_xlabel("x label")
     ax.set_ylabel("y label")
     ax.legend()
@@ -143,8 +167,12 @@ def plot_x_y_yaw(output_file, ins_df, ro_df, kf_df):
             color=settings.colours.ins, label="INS")
     ax.plot(ro_df.yaw, ',',
             color=settings.colours.ro, label="RO")
-    ax.plot(kf_df.yaw, ',',
-            color=settings.colours.kf, label="KF")
+    ax.plot(kf_aux1_df.yaw, ',',
+            color=settings.colours.kf_aux1, label="KF-aux1")
+    ax.plot(kf_aux2_df.yaw, ',',
+            color=settings.colours.kf_aux2, label="KF-aux2")
+    ax.plot(kf_aux3_df.yaw, ',',
+            color=settings.colours.kf_aux3, label="KF-aux3")
     ax.set_xlabel("x label")
     ax.set_ylabel("y label")
     ax.legend()
@@ -162,8 +190,8 @@ def parse_arguments(args):
                         help="INS relative pose CSV")
     parser.add_argument('--ro_csv', default=settings.RO_CSV, type=Path,
                         help="RO relative pose CSV")
-    parser.add_argument('--kf_csv', default=settings.KF_CSV, type=Path,
-                        help="Kalman filter relative pose CSV")
+    # parser.add_argument('--kf_csv', default=settings.KF_CSV, type=Path,
+    #                     help="Kalman filter relative pose CSV")
     parser.add_argument('--output_dir', default="", type=Path,
                         help="Output directory to store figures")
     parser.add_argument('--overwrite', default=False, action="store_true",
@@ -180,10 +208,13 @@ def main(arg_list=None):
 
     ins_df = pd.read_csv(args.ins_csv)
     ro_df = pd.read_csv(args.ro_csv)
-    kf_df = pd.read_csv(args.kf_csv)
+    kf_aux1_df = pd.read_csv(settings.AUX1_CSV)
+    kf_aux2_df = pd.read_csv(settings.AUX2_CSV)
+    kf_aux3_df = pd.read_csv(settings.AUX3_CSV)
 
-    plot_x_y_yaw(f"{output_path}/x_y_yaw.pdf", ins_df, ro_df, kf_df)
-    get_metrics(ins_df, ro_df, kf_df, output_path)
+    plot_x_y_yaw(f"{output_path}/x_y_yaw.pdf", ins_df,
+                 ro_df, kf_aux1_df, kf_aux2_df, kf_aux3_df)
+    get_metrics(ins_df, ro_df, kf_aux1_df, kf_aux2_df, kf_aux3_df, output_path)
 
 
 if __name__ == '__main__':

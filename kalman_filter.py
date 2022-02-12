@@ -63,7 +63,8 @@ def quick_plot(output_file, df_ro, df_kf):
 
     ax.plot(df_ro.x, '-', color=settings.colours.ro,
             lw=LINE_WIDTH, label="RO_x")
-    ax.plot(df_kf.x, '-', color="tab:red", lw=LINE_WIDTH, label="KF")
+    ax.plot(df_kf.x, '-', color=settings.colours.kf_aux1,
+            lw=LINE_WIDTH, label="KF")
     ax.set_xlabel("xtitle")
     ax.set_ylabel("ytitle")
     ax.legend()
@@ -99,7 +100,7 @@ def main():
     print("Running script...")
     output_dir = Path("/Users/roberto/data/kalman-filter-rerun")
 
-    ro_csv = f"{output_dir}/ro_poses.csv"
+    ro_csv = settings.RO_CSV
     df_ro = pd.read_csv(ro_csv)
     df_labels = pd.read_csv(f"{output_dir}/svm-labels.csv")
 
