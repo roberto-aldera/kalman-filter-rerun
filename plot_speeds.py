@@ -6,8 +6,8 @@ import settings
 import matplotlib.pyplot as plt
 import pdb
 
-LINE_WIDTH = 0.5
-MARKER_SIZE = 4
+LINE_WIDTH = 1.5
+MARKER_SIZE = 7
 
 plt.rc('text', usetex=False)
 plt.rc('font', family='serif')
@@ -35,7 +35,7 @@ def plot_speeds(ins_df, ro_df, kf_aux1_df, kf_aux2_df, kf_aux3_df,  output_path)
     assert(gt_timestamps[0] == aux2_timestamps[0])
     assert(gt_timestamps[0] == aux3_timestamps[0])
 
-    _, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 5))
+    _, ax = plt.subplots(nrows=1, ncols=1, figsize=(10, 7))
     ax.plot(gt_timestamps, gt_speeds, '+-', lw=LINE_WIDTH, ms=MARKER_SIZE+3,
             color=settings.colours.ins, label="Ground truth")
     ax.plot(aux0_timestamps, aux0_speeds, '.-', lw=LINE_WIDTH, ms=MARKER_SIZE,
